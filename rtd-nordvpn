@@ -1,0 +1,199 @@
+#!/bin/bash
+#
+#::             RTD Ubuntu + derivatives configuration and setup script
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+#:: Author(s):   	SLS, KLS, NB.  Buffalo Center, IA & Avarua, Cook Islands
+RTD_Version="1.00"
+#::
+#::
+#::	Purpose: - The purpose of the script is to setup nordvpn if required, and connect. 
+#::		 - You must setup an account with the VPN vendor to use the service.
+#::
+#::	Dependencies:
+#::	  _rtd_functions -- contain usefull admin functions for scripts, such as "how to install software" on different systems. 
+#::
+#::
+#::
+#::
+#::
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+	
+
+
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+#::::::::::::::                                          ::::::::::::::::::::::
+#::::::::::::::                SETINGS                   ::::::::::::::::::::::
+#::::::::::::::                                          ::::::::::::::::::::::
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+NORDVPN_DEB="https://repo.nordvpn.com/deb/nordvpn/debian/pool/main/nordvpn-release_1.0.0_all.deb"
+NORDVPN_RPM="https://repo.nordvpn.com/yum/nordvpn/centos/noarch/Packages/n/nordvpn-release-1.0.0-1.noarch.rpm"
+
+
+
+
+
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+#::::::::::::::                                          ::::::::::::::::::::::
+#::::::::::::::             INITIALIZE                   ::::::::::::::::::::::
+#::::::::::::::                                          ::::::::::::::::::::::
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+# Set some basic preferences... 
+me="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
+export NEWT_COLORS='root=,gray '
+
+# Notify the user that some things may need to be done if this is the first time the script is run.
+if [ ! -f ~/.config/rtd-nordvpn-firstrun.ok ]; then 
+	whiptail --title "RTD Nordvpn Starter: First Run Dialog" --msgbox "	This appears to be the first time that $me is run. Please note that you 
+	may be prompted to allow me to do some things. I will need to:
+
+	- make sure the _rtd_functions (instructions how I should do things) are present
+	- make sure that the Nordvpn client is installed
+	
+	Press [ENTER] to continue" 0 110
+	mkdir -p ~/.config && touch ~/.config/rtd-nordvpn-firstrun.ok
+fi
+
+# If the RTD functions file is present use it, otherwise download a new copy of it and use this. 
+if [ -f ~/bin/_rtd_functions ]; then 
+	source ~/bin/_rtd_functions
+else 
+	if [ -f /opt/rtd/scripts/_rtd_functions ]; then 
+		source /opt/rtd/scripts/_rtd_functions
+	else 
+		echo RTD Functions not found... 
+		if (whiptail  --title "RTD Nordvpn Starter: Get Parts" --yesno "For this tool to run correctly I need to download some software from the internet. Is this OK?" 8 78); then
+			echo "OK Thank you. Geting the required scrpt lirary file "RTD_FUNCTIONS"" 
+			sudo mkdir -p /opt/rtd/scripts
+			sudo wget -q https://github.com/vonschutter/RTD-Build/raw/master/System_Setup/_rtd_functions -P /opt/rtd/scripts/
+			source /opt/rtd/scripts/_rtd_functions
+		else
+			echo "You selected No, exit status was $?."
+			exit
+		fi
+
+	fi
+fi
+
+echo "RTD_FUNCTIONS = $RTDFUNCTIONS"
+if [ $RTDFUNCTIONS -eq 1 ]; then
+        echo RTD functions confirmed loaded!
+      else
+        echo RTD functions NOT loaded!
+	echo Please make sure that you are connected to the internet and that sudo and wget are installed.
+	exit 1
+fi
+
+
+
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+#::::::::::::::                                          ::::::::::::::::::::::
+#::::::::::::::          INTERNAL FUNCTIONS              ::::::::::::::::::::::
+#::::::::::::::                                          ::::::::::::::::::::::
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+select_country_to_tunnel_to () {
+
+	while true; do
+		exec 3>&1
+		selection=$(whiptail \
+		--ok-button "Connect VPN" \
+		--cancel-button "Cancel/Disconnect VPN" \
+		--title "Nordvpn Country Selector" \
+		--menu "" 0 110 0 \
+		"1" "Nearest server" \
+		"2" "Denmark" \
+		"3" "Iceland" \
+		"4" "Luxembourg" \
+		"5" "France" \
+		"6" "Germany" \
+		2>&1 1>&3)
+		exit_status=$?
+		exec 3>&-
+
+		case $exit_status in
+			1)
+				clear
+				nordvpn disconnect
+				exit
+			;;
+			255)
+				clear
+				echo "Program aborted." >&2
+				ps aux |grep nordvpn
+				echo "VPN is probably still running in the background... "
+				echo "If this is what you want OK, otherwise type nordvpn disconnect"
+				exit 1
+			;;
+		esac
+
+		case $selection in
+		0 )
+		clear
+		echo "Program terminated by user..."
+		;;
+		1 )
+		nordvpn connect && watch nordvpn status
+		;;
+		2 )
+		nordvpn connect Denmark && watch nordvpn status
+		;;
+		3 )
+		nordvpn connect Iceland && watch nordvpn status
+		;;
+		4 )
+		nordvpn connect Luxembourg && watch nordvpn status
+		;;
+		5 )	
+		nordvpn connect France && watch nordvpn status
+		;;
+		6 )	
+		nordvpn connect Germany && watch nordvpn status
+		;;
+		esac
+	done   
+}
+
+
+
+run_nordvpn() {
+	if hash nordvpn 2>/dev/null; then
+		select_country_to_tunnel_to
+		
+	else
+		if (whiptail --backtitle "$BRANDING" --title "RTD Nordvpn Starter: Get VPN" --yesno "Nordvpn is not installed... I need to download it from the internet. Is this OK?" 8 78); then
+			echo "OK Thank you. Geting Nordvpn from the website..." 
+			if hash rpm 2>/dev/null; then
+				sudo rpm -ivh $NORDVPN_RPM || sudo yum update -y 
+				sudo yum install nordvpn && select_country_to_tunnel_to
+			elif hash apt 2>/dev/null; then 
+				sudo wget -q $NORDVPN_DEB && sudo dpkg -i ./nordvpn-release_1.0.0_all.deb
+				sudo apt -f install 
+				sudo apt update
+				sudo apt -y install nordvpn && select_country_to_tunnel_to
+			else 
+			    whiptail --title "RTD Nordvpn Starter: PROBLEM" --msgbox "	I was not able to install Nordvn for you. Please do it manually and try again" 0 110
+			fi
+		else
+			echo "You selected No, exit status was $?."
+			exit
+		fi
+
+	fi
+}
+
+
+
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+#::::::::::::::                                          ::::::::::::::::::::::
+#::::::::::::::                  RUN                     ::::::::::::::::::::::
+#::::::::::::::                                          ::::::::::::::::::::::
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+
+run_nordvpn
