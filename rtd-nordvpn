@@ -145,7 +145,7 @@ watch_vpn_connection () {
 		nordvpn status
 	}
 	export -f status_cycle
-	watch -t -x bash --pretty-print -c status_cycle
+	watch -t -x bash -c status_cycle
 }
 
 
