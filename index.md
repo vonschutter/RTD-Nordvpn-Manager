@@ -1,4 +1,4 @@
-# RTD Nordvpn Manager
+# RunTimeData Nordvpn Manager
 
 ![RTD CMD](Media_files/CMD.png?raw=true "Main Window")
 
