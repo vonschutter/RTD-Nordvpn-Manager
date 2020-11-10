@@ -85,7 +85,6 @@ err_no_menu_system_found () {
 	  n|N ) err_no_menu_system_available ;;
 	  * ) echo "Invalid Selection" && err_no_menu_system_found ;;
 	esac
-
 }
 
 install_software () {
