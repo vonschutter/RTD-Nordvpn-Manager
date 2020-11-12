@@ -9,7 +9,7 @@ This is a simple tool to make using NordVPN easier on Linux. By default NordVPN 
 To install and use this tool on Linux (for example Ubuntu) simply open a terminal and cut and paste the line below in to the terminal window:
 
 ```
-wget https://github.com/vonschutter/RTD-Nordvpn-Manager/blob/master/rtd-nordvpn -O ~/bin/ && chmod +x ~/bin/rtd-nordvpn && bash ~/bin/nordvpn 
+wget https://github.com/vonschutter/RTD-Nordvpn-Manager/blob/master/rtd-nordvpn -O ~/bin/ && chmod +x ~/bin/rtd-nordvpn && bash ~/bin/rtd-nordvpn 
 
 ```
 
