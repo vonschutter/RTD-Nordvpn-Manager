@@ -76,6 +76,8 @@ check_menu_availability () {
 }
 
 err_no_menu_system_found () {
+	# If thre is no ability to display menus in the bash shell currently available
+	# then ask for the permission to attempt to do so. 
 	echo -e "$RED There is no way to display menus on this system $ENDCOLOR"
 	echo -e "This is required to display the chices of countries..."
 	echo -e "$YELLOW May I attepmpt to install this ability to your system? $ENDCOLOR"
@@ -88,6 +90,9 @@ err_no_menu_system_found () {
 }
 
 install_software () {
+	# This is a simple function to address the different ways to install software on Linux
+	# distributions. This should cover Fedora, RedHat, Ubuntu, Debian and many others. However, 
+	# it will fail if a package is named differently across distributions. 
 	if hash pkcon 2>/dev/null; then
 		pkcon -y  install $@
 	elif hash yum 2>/dev/null; then
@@ -107,6 +112,7 @@ install_software () {
 
 
 err_nordvpn_install () {
+	# Display and error if the installation of NordVPN was not possible. 
 	$rtd_menu --title "$_branding helper: PROBLEM" --msgbox "	I was not able to install Nordvn for you. Please do it manually and try again" 0 110
 	_cleanup
 	exit 1
@@ -114,6 +120,7 @@ err_nordvpn_install () {
 
 
 err_no_menu_system_available () {
+	# Display an error if a menu system was not installed after all...
 	echo "There is no menu or dialog software installed on this system..."
 	echo "If you want to use $me you must ensure that whiptail or dialog is installed."
 	read -p Press [ENTER] to exit...
@@ -137,6 +144,7 @@ check_if_first_run () {
 
 
 watch_vpn_connection () {
+	# Start a watcher in the terminal that will show stats and status for the VPN.
 	status_cycle () {
 		echo ---------------------------------------------------------------------------
 		echo $_branding Connected $(date)
@@ -154,6 +162,8 @@ _cleanup () {
 
 
 select_country_to_tunnel_to () {
+	# Function to grab the current set of possible countries to connect NordVPN to, and
+	# prompt the end user for a choice of what country to connect to... 
 	local -a countries_array=( '' '' $(nordvpn countries | tr -c '[:alnum:][:blank:]_' ' ') )
 	local countries_for_rtdmenu=$( for ((i=2;i<${#countries_array[@]};i++)) ; do echo $i ${countries_array[$i]} ; done )
 	while : ; do
@@ -194,6 +204,7 @@ select_country_to_tunnel_to () {
 
 
 run_nordvpn() {
+	# Function to start up NordVPN checking for all requirements and calling the proper menus. 
 	if hash nordvpn 2>/dev/null; then
 		select_country_to_tunnel_to
 
